@@ -1993,6 +1993,51 @@ namespace Harlinn::Common
 		return 0;
     }
 
+#if defined(__GNUC__) || defined(__CLANG__)
+    /// <summary>
+    /// Compares two byte sequences in a case-insensitive manner.
+    /// </summary>
+    /// <param name="first">Pointer to the first buffer to compare. Must be non-null when <paramref name="length"/> &gt; 0.</param>
+    /// <param name="second">Pointer to the second buffer to compare. Must be non-null when <paramref name="length"/> &gt; 0.</param>
+    /// <param name="length">The number of bytes to compare. When zero, the function returns 0.</param>
+    /// <returns>
+    /// A negative value if <paramref name="first"/> is less than <paramref name="second"/>,
+    /// zero if they are equal, or a positive value if <paramref name="first"/> is greater than <paramref name="second"/>.
+    /// </returns>
+    [[nodiscard]] inline int _memicmp( const void* first, const void* second, size_t length ) noexcept
+    {
+        if ( length == 0 )
+        {
+            return 0;
+        }
+
+#ifdef _DEBUG
+        if ( !first )
+        {
+            assert( false && "first is null" );
+        }
+        if ( !second )
+        {
+            assert( false && "second is null" );
+        }
+#endif
+
+        const unsigned char *s1 = reinterpret_cast<const unsigned char *>(first);
+        const unsigned char *s2 = reinterpret_cast<const unsigned char *>(second);
+    
+        for (size_t i = 0; i < length; i++) 
+        {
+            int c1 = std::tolower(s1[i]);
+            int c2 = std::tolower(s2[i]);
+            if (c1 != c2) 
+            {
+                return c1 - c2;
+            }
+        }
+        return 0;
+    }
+#endif
+
     /// <summary>
     /// Compares two byte sequences in a case-insensitive manner.
     /// </summary>
