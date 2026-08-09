@@ -177,8 +177,24 @@ namespace Harlinn::Common
     /// <typeparam name="T">
     /// Type to be checked as a constant range.
     /// </typeparam>
+    
+#if defined(__APPLE__)
+    namespace Internal
+    {
+        template<std::indirectly_readable T>
+        using IterConstReferenceType = std::common_reference_t<const std::iter_value_t<T>&, std::iter_reference_t<T>>;
+
+        template<class T>
+        concept ConstantIterator = std::input_iterator<T> && std::same_as<IterConstReferenceType<T>, std::iter_reference_t<T>>;
+    }
+
+    template<class T>
+    concept ConstantRange =  std::ranges::input_range<T> && Internal::ConstantIterator<std::ranges::iterator_t<T>>;
+#else
     template<typename T>
     concept ConstantRange = std::ranges::constant_range<T>;
+#endif
+
 
 
 
