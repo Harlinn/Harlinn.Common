@@ -2419,7 +2419,7 @@ namespace Harlinn::Common
         return Common::Internal::LengthOf( str );
     }
 
-    inline constexpr int Compare( nullptr_t s1, nullptr_t s2 ) noexcept
+    inline constexpr int Compare( std::nullptr_t s1, std::nullptr_t s2 ) noexcept
     {
         return 0;
     }
@@ -2427,7 +2427,7 @@ namespace Harlinn::Common
     template<typename CharT>
         requires ( std::is_same_v< std::remove_cvref_t<CharT>, char > ||
             std::is_same_v< std::remove_cvref_t<CharT>, wchar_t > )
-    inline constexpr int Compare( nullptr_t s1, const CharT* s2 ) noexcept
+    inline constexpr int Compare( std::nullptr_t s1, const CharT* s2 ) noexcept
     {
 #ifdef _DEBUG
         assert( s1 == nullptr );
@@ -2438,7 +2438,7 @@ namespace Harlinn::Common
     template<typename CharT>
         requires ( std::is_same_v< std::remove_cvref_t<CharT>, char > ||
             std::is_same_v< std::remove_cvref_t<CharT>, wchar_t > )
-    inline constexpr int Compare( const CharT* s1, nullptr_t s2 ) noexcept
+    inline constexpr int Compare( const CharT* s1, std::nullptr_t s2 ) noexcept
     {
 #ifdef _DEBUG
         assert( s2 == nullptr );
