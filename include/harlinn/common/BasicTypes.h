@@ -88,15 +88,15 @@ namespace Harlinn::Common
 
     
 
-    constexpr unsigned long long operator"" _gb( unsigned long long value )
+    constexpr unsigned long long operator""_gb( unsigned long long value )
     {
         return value * 1024ULL * 1024ULL * 1024ULL;
     }
-    constexpr unsigned long long operator"" _mb( unsigned long long value )
+    constexpr unsigned long long operator""_mb( unsigned long long value )
     {
         return value * 1024ULL * 1024ULL;
     }
-    constexpr unsigned long long operator"" _kb( unsigned long long value )
+    constexpr unsigned long long operator""_kb( unsigned long long value )
     {
         return value * 1024ULL;
     }

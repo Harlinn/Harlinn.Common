@@ -29,6 +29,7 @@
 #include <cmath>
 #include <cwctype>
 #include <limits>
+#include <climits>
 #include <string_view>
 
 #include "Concepts.h"
