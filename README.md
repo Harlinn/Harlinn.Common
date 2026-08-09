@@ -1,5 +1,7 @@
 # Harlinn.Common
 
+[![CI Status](https://github.com)](https://github.com)
+
 Harlinn.Common is a header only library which only depends on a 
 few standard C++ header files:
 
