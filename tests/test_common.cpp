@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include <harlinn/common/common.h>
+#include <harlinn/common/Utils.h>
 
 TEST_CASE("Harlinn.Common placeholder", "[common]")
 {
