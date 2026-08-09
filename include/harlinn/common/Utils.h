@@ -737,7 +737,7 @@ namespace Harlinn::Common
     /// </summary>
     inline constexpr long ReverseBits( long val ) noexcept
     {
-        using UIntType = std::make_unsigned_t<long>;
+        using UIntType = MakeUnsigned<long>;
         return std::bit_cast< long >( ReverseBits( std::bit_cast< UIntType >( val ) ) );
     }
     /// <summary>
@@ -745,7 +745,7 @@ namespace Harlinn::Common
     /// </summary>
     inline constexpr unsigned long ReverseBits( unsigned long val ) noexcept
     {
-        using UIntType = std::make_unsigned_t<long>;
+        using UIntType = MakeUnsigned<unsigned long>;
         return std::bit_cast< unsigned long >( ReverseBits( std::bit_cast< UIntType >( val ) ) );
     }
 
