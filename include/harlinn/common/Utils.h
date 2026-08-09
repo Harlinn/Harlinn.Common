@@ -790,13 +790,13 @@ namespace Harlinn::Common
     /// - Operates on the unsigned bit-pattern of `T` via `std::bit_cast` to avoid UB when `T` is signed.
     /// </remarks>
     template<IntegerType T>
-    constexpr bool IndexOfBitFromLSB( unsigned long* index, T bits )
+    constexpr bool IndexOfBitFromLSB( UInt32* index, T bits )
     {
         using UIntType = std::make_unsigned_t<T>;
         // Work on the unsigned bit-pattern
         const UIntType valueU = std::bit_cast<UIntType>( bits );
 
-        if ( std::is_constant_evaluated( ) )
+        if consteval
         {
             // Constant-eval: use std::countr_zero (constexpr) instead of manual loop.
             if ( valueU == static_cast<UIntType>( 0 ) )
@@ -804,7 +804,7 @@ namespace Harlinn::Common
                 return false;
             }
             // std::countr_zero is well-defined for unsigned integer types and is constexpr.
-            unsigned long idx = static_cast<unsigned long>( std::countr_zero( valueU ) );
+            UInt32 idx = static_cast<UInt32>( std::countr_zero( valueU ) );
             if ( index )
             {
                 *index = idx;
@@ -813,12 +813,14 @@ namespace Harlinn::Common
         }
         else
         {
+#if defined(_MSC_VER)
             // Runtime: dispatch to MSVC intrinsics for performance.
             if constexpr ( sizeof( UIntType ) > 4 )
             {
                 // Use 64-bit intrinsic. Cast the value to UInt64 to match intrinsic signature.
                 auto v = std::bit_cast<UInt64>( bits );
                 return _BitScanForward64( index, v ) != 0;
+
             }
             else
             {
@@ -826,6 +828,19 @@ namespace Harlinn::Common
                 auto v = static_cast<unsigned long>( valueU );
                 return _BitScanForward( index, v ) != 0;
             }
+#else
+            if ( valueU == static_cast<UIntType>( 0 ) )
+            {
+                return false;
+            }
+            // std::countr_zero is well-defined for unsigned integer types and is constexpr.
+            UInt32 idx = static_cast<UInt32>( std::countr_zero( valueU ) );
+            if ( index )
+            {
+                *index = idx;
+            }
+            return true;
+#endif
         }
     }
 
