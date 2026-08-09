@@ -699,20 +699,7 @@ namespace Harlinn::Common
     {
         return std::bit_cast< Int32 >( ReverseBits( std::bit_cast< UInt32 >( val ) ) );
     }
-    /// <summary>
-    /// Reverses the order of the bits of a long.
-    /// </summary>
-    inline constexpr long ReverseBits( long val ) noexcept
-    {
-        return std::bit_cast< long >( ReverseBits( std::bit_cast< UInt32 >( val ) ) );
-    }
-    /// <summary>
-    /// Reverses the order of the bits of an unsigned long.
-    /// </summary>
-    inline constexpr unsigned long ReverseBits( unsigned long val ) noexcept
-    {
-        return std::bit_cast< unsigned long >( ReverseBits( std::bit_cast< UInt32 >( val ) ) );
-    }
+    
 
     /// <summary>
     /// Reverses the order of the bits of a wchar_t.
@@ -744,6 +731,25 @@ namespace Harlinn::Common
     {
         return std::bit_cast< Int64 >( ReverseBits( std::bit_cast< UInt64 >( val ) ) );
     }
+
+    /// <summary>
+    /// Reverses the order of the bits of a long.
+    /// </summary>
+    inline constexpr long ReverseBits( long val ) noexcept
+    {
+        using UIntType = std::make_unsigned_t<long>;
+        return std::bit_cast< long >( ReverseBits( std::bit_cast< UIntType >( val ) ) );
+    }
+    /// <summary>
+    /// Reverses the order of the bits of an unsigned long.
+    /// </summary>
+    inline constexpr unsigned long ReverseBits( unsigned long val ) noexcept
+    {
+        using UIntType = std::make_unsigned_t<long>;
+        return std::bit_cast< unsigned long >( ReverseBits( std::bit_cast< UIntType >( val ) ) );
+    }
+
+
     /// <summary>
     /// Reverses the order of the bits of a float.
     /// </summary>
