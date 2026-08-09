@@ -674,10 +674,7 @@ namespace Harlinn::Common
     {
         return std::bit_cast< Int16 >( ReverseBits( std::bit_cast< UInt16 >( val ) ) );
     }
-    inline constexpr wchar_t ReverseBits( wchar_t val ) noexcept
-    {
-        return std::bit_cast< wchar_t >( ReverseBits( std::bit_cast< UInt16 >( val ) ) );
-    }
+    
 
     /// <summary>
     /// Reverses the order of the bits of an UInt32 value.
@@ -715,6 +712,15 @@ namespace Harlinn::Common
     inline constexpr unsigned long ReverseBits( unsigned long val ) noexcept
     {
         return std::bit_cast< unsigned long >( ReverseBits( std::bit_cast< UInt32 >( val ) ) );
+    }
+
+    /// <summary>
+    /// Reverses the order of the bits of a wchar_t.
+    /// </summary>
+    inline constexpr wchar_t ReverseBits( wchar_t val ) noexcept
+    {
+        using UIntType = std::make_unsigned_t<wchar_t>;
+        return std::bit_cast< wchar_t >( ReverseBits( std::bit_cast< UIntType >( val ) ) );
     }
 
     /// <summary>
