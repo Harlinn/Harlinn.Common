@@ -1,5 +1,9 @@
 add_executable(HarlinnCommonTests
     test_common.cpp
+    test_basic_types_concepts.cpp
+    test_utils_bits.cpp
+    test_utils_memory.cpp
+    test_utils_arithmetic.cpp
 )
 
 target_link_libraries(HarlinnCommonTests PRIVATE

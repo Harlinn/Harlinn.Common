@@ -488,33 +488,62 @@ namespace Harlinn::Common
     /// </para>
     /// </remarks>
     template<IntegerType T>
-    inline constexpr T ByteSwap( T value )
+    inline constexpr T ByteSwap(T value)
     {
-        if ( std::is_constant_evaluated( ) )
+        if (std::is_constant_evaluated())
         {
-            return std::bit_cast< T >( Internal::ByteSwapImpl( std::bit_cast< std::make_unsigned_t<T> >( value ) ) );
+            return std::bit_cast<T>( Internal::ByteSwapImpl(std::bit_cast<std::make_unsigned_t<T>>(value)));
+        }
+
+        if constexpr (sizeof(std::remove_cvref_t<T>) == 1)
+        {
+            return value;
+        }
+        else if constexpr (sizeof(std::remove_cvref_t<T>) == 2)
+        {
+#if defined(_MSC_VER)
+            auto result = _byteswap_ushort(std::bit_cast<UInt16>(value));
+#elif defined(__GNUC__) || defined(__clang__)
+            auto result = __builtin_bswap16(std::bit_cast<UInt16>(value));
+#else
+            auto result = std::bit_cast<UInt16>(value);
+            result = (result >> 8) | (result << 8);
+#endif
+            return std::bit_cast<std::remove_cvref_t<T>>(result);
+        }
+        else if constexpr (sizeof(std::remove_cvref_t<T>) == 4)
+        {
+#if defined(_MSC_VER)
+            auto result = _byteswap_ulong(std::bit_cast<UInt32>(value));
+#elif defined(__GNUC__) || defined(__clang__)
+            auto result = __builtin_bswap32(std::bit_cast<UInt32>(value));
+#else
+            auto result = std::bit_cast<UInt32>(value);
+            result = ((result & 0x000000FFu) << 24)
+                   | ((result & 0x0000FF00u) << 8)
+                   | ((result & 0x00FF0000u) >> 8)
+                   | ((result & 0xFF000000u) >> 24);
+#endif
+            return std::bit_cast<std::remove_cvref_t<T>>(result);
         }
         else
         {
-            if constexpr ( sizeof( std::remove_cvref_t<T> ) == 1 )
-            {
-                return value;
-            }
-            else if constexpr ( sizeof( std::remove_cvref_t<T> ) == 2 )
-            {
-                return std::bit_cast< std::remove_cvref_t<T> >(
-                    _byteswap_ushort( std::bit_cast< UInt16 >( value ) ) );
-            }
-            else if constexpr ( sizeof( std::remove_cvref_t<T> ) == 4 )
-            {
-                return std::bit_cast< std::remove_cvref_t<T> >(
-                    _byteswap_ulong( std::bit_cast< UInt32 >( value ) ) );
-            }
-            else
-            {
-                return std::bit_cast< std::remove_cvref_t<T> >(
-                    _byteswap_uint64( std::bit_cast< UInt64 >( value ) ) );
-            }
+#if defined(_MSC_VER)
+            auto result = _byteswap_uint64(std::bit_cast<UInt64>(value));
+#elif defined(__GNUC__) || defined(__clang__)
+            auto result = __builtin_bswap64(std::bit_cast<UInt64>(value));
+#else
+            auto result = std::bit_cast<UInt64>(value);
+            result = ((result & 0x00000000000000FFULL) << 56)
+                   | ((result & 0x0000000000FF0000ULL) << 24)
+                   | ((result & 0x00000000FF000000ULL) << 8)
+                   | ((result & 0x0000FF0000000000ULL) >> 8)
+                   | ((result & 0x00FF000000000000ULL) >> 24)
+                   | ((result & 0xFF00000000000000ULL) >> 56)
+                   | ((result & 0x000000FF00000000ULL) >> 40)
+                   | ((result & 0x000000000000FF00ULL) << 40);
+#endif
+            return std::bit_cast<std::remove_cvref_t<T>>(result);
         }
     }
 
@@ -536,7 +565,7 @@ namespace Harlinn::Common
     {
         using Type = std::remove_cvref_t<T>;
         using UIntType = MakeUnsigned<Type>;
-        std::bit_cast<Type>( ByteSwap( std::bit_cast<UIntType>( value ) ) );
+        return std::bit_cast<Type>( ByteSwap( std::bit_cast<UIntType>( value ) ) );
     }
 
 
@@ -914,9 +943,9 @@ namespace Harlinn::Common
     /// An std::optional with an assigned value if a set bit was found.
     /// </returns>
     template<IntegerType T>
-    constexpr std::optional<unsigned long> IndexOfBitFromLSB( T bits )
+    constexpr std::optional<UInt32> IndexOfBitFromLSB( T bits )
     {
-        unsigned long index{};
+        UInt32 index{};
         if ( IndexOfBitFromLSB( &index, bits ) )
         {
             return index;
@@ -936,12 +965,12 @@ namespace Harlinn::Common
     /// - Operates on the unsigned bit-pattern of <c>T</c> via <c>std::bit_cast</c> to avoid signed-shift UB.
     /// </remarks>
     template<IntegerType T>
-    constexpr bool IndexOfBitFromMSB( unsigned long* index, T bits )
+    constexpr bool IndexOfBitFromMSB( UInt32* index, T bits )
     {
         using UIntType = std::make_unsigned_t<T>;
         const UIntType valueU = std::bit_cast<UIntType>( bits );
 
-        if ( std::is_constant_evaluated( ) )
+        if consteval
         {
             if ( valueU == static_cast<UIntType>( 0 ) )
             {
@@ -951,7 +980,7 @@ namespace Harlinn::Common
             unsigned long idx = static_cast<unsigned long>( std::bit_width( valueU ) - 1u );
             if ( index )
             {
-                *index = idx;
+                *index = static_cast<UInt32>( idx );
             }
             return true;
         }
@@ -982,7 +1011,7 @@ namespace Harlinn::Common
                 {
                     if ( index )
                     {
-                        *index = tmpIndex;
+                        *index = static_cast<UInt32>( tmpIndex );
                     }
                     return true;
                 }
@@ -996,7 +1025,7 @@ namespace Harlinn::Common
             unsigned long idx = static_cast<unsigned long>( std::bit_width( valueU ) - 1u );
             if ( index )
             {
-                *index = idx;
+                *index = static_cast<UInt32>( idx );
             }
             return true;
 #endif
@@ -1013,9 +1042,9 @@ namespace Harlinn::Common
     /// An std::optional with an assigned value if a set bit was found.
     /// </returns>
     template<IntegerType T>
-    constexpr std::optional<unsigned long> IndexOfBitFromMSB( T bits )
+    constexpr std::optional<UInt32> IndexOfBitFromMSB( T bits )
     {
-        unsigned long index{};
+        UInt32 index{};
         if ( IndexOfBitFromMSB( &index, bits ) )
         {
             return index;
@@ -2607,11 +2636,16 @@ namespace Harlinn::Common
         requires IsInteger<T>
     constexpr inline bool IsPowerOfTwo( T v ) noexcept
     {
+        if constexpr ( std::is_signed_v<T> )
+        {
+            if ( v < 0 )
+            {
+                return false;
+            }
+        }
+
         using U = std::make_unsigned_t<T>;
         const U u = static_cast< U >( v );
-        // Negative signed values become large unsigned values; treat negatives as not power-of-two.
-        // The test below correctly yields false for those cases because u != 0 && (u & (u - 1)) == 0
-        // will be false for a two's-complement negative when interpreted as unsigned.
         return u != 0u && ( ( u & ( u - 1u ) ) == 0u );
     }
     template<typename T>
@@ -2967,7 +3001,7 @@ namespace Harlinn::Common
         /// </typeparam>
         /// <remarks>
         /// - This type is intended for internal use and is returned by the free function <c>Finally</c>.
-        /// - The guard stores the callable in the base class subobject and invokes it from the destructor via <c>operator()()</c>.
+        /// - The guard stores the callable and invokes it from the destructor.
         /// - The type is non-copyable and non-movable to ensure a single deterministic invocation of the callable.
         /// - Use the <c>Finally</c> factory function to construct instances of this type.
         /// </remarks>
@@ -2979,17 +3013,22 @@ namespace Harlinn::Common
         /// </code>
         /// </example>
         template <typename Fn>
-        struct FinallyImpl : public Fn
+        struct FinallyImpl
         {
-            FinallyImpl( Fn&& Func )
-                : Fn( std::forward<Fn>( Func ) )
+            Fn Func;
+
+            template <typename Callable>
+            explicit FinallyImpl( Callable&& func )
+                : Func( std::forward<Callable>( func ) )
             {
             }
+
             FinallyImpl( const FinallyImpl& ) = delete;
             FinallyImpl( FinallyImpl&& ) = delete;
+
             ~FinallyImpl( )
             {
-                this->operator()( );
+                Func( );
             }
         };
     }
@@ -3023,9 +3062,9 @@ namespace Harlinn::Common
     /// </example>
     template <typename Fn>
         requires std::is_invocable_v<Fn>
-    inline Internal::FinallyImpl<Fn> Finally( Fn&& Func )
+    inline Internal::FinallyImpl<std::decay_t<Fn>> Finally( Fn&& Func )
     {
-        return { std::forward<Fn>( Func ) };
+        return Internal::FinallyImpl<std::decay_t<Fn>>( std::forward<Fn>( Func ) );
     }
 
     /// <summary>

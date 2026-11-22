@@ -27,6 +27,30 @@ TEST_CASE("Harlinn.Common IndexOfBitFromLSB accepts nullptr output index", "[com
     REQUIRE(index == 3);
 }
 
+TEST_CASE("Harlinn.Common Finally accepts lvalue callables", "[common]")
+{
+    int calls = 0;
+    auto cleanup = [&calls] { ++calls; };
+
+    {
+        auto guard = Harlinn::Common::Finally(cleanup);
+        REQUIRE(calls == 0);
+    }
+
+    REQUIRE(calls == 1);
+}
+
+TEST_CASE("Harlinn.Common IsPowerOfTwo rejects negative signed values", "[common]")
+{
+    using Int32 = Harlinn::Common::Int32;
+
+    REQUIRE_FALSE(Harlinn::Common::IsPowerOfTwo(Int32{-1}));
+    REQUIRE_FALSE(Harlinn::Common::IsPowerOfTwo(std::numeric_limits<Int32>::min()));
+    REQUIRE(Harlinn::Common::IsPowerOfTwo(Int32{1}));
+    REQUIRE(Harlinn::Common::IsPowerOfTwo(Int32{8}));
+    REQUIRE_FALSE(Harlinn::Common::IsPowerOfTwo(Int32{0}));
+}
+
 TEST_CASE("Harlinn.Common::BitsXX bit views handles representation aliasing", "[common]")
 {
     Harlinn::Common::Bits16 bits16{};
