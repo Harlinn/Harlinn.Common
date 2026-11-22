@@ -21,8 +21,11 @@
 #define _USE_MATH_DEFINES 1
 #endif
 
-#include <type_traits>
+#include <bit>
+#include <cstddef>
+#include <cstdint>
 #include <optional>
+#include <type_traits>
 
 namespace Harlinn::Common
 {
@@ -71,13 +74,13 @@ namespace Harlinn::Common
     
 
 #define HCC_DEFINE_ENUM_FLAG_OPERATORS(ENUMTYPE,INTTYPE) \
-  inline constexpr ENUMTYPE operator | (ENUMTYPE a, ENUMTYPE b) noexcept { return ENUMTYPE(((INTTYPE) a) | ((INTTYPE) b)); } \
-  inline constexpr ENUMTYPE &operator |= (ENUMTYPE &a, ENUMTYPE b) noexcept { (INTTYPE &) a |= ((INTTYPE) b); return a; } \
-  inline constexpr ENUMTYPE operator & (ENUMTYPE a, ENUMTYPE b) noexcept { return ENUMTYPE(((INTTYPE) a) & ((INTTYPE) b)); } \
-  inline constexpr ENUMTYPE &operator &= (ENUMTYPE &a, ENUMTYPE b) noexcept { (INTTYPE &) a &= ((INTTYPE) b); return a; } \
-  inline constexpr ENUMTYPE operator ~ (ENUMTYPE a) noexcept { return ENUMTYPE(~((INTTYPE) a)); } \
-  inline constexpr ENUMTYPE operator ^ (ENUMTYPE a, ENUMTYPE b) noexcept { return ENUMTYPE(((INTTYPE) a) ^ ((INTTYPE) b)); } \
-  inline constexpr ENUMTYPE &operator ^= (ENUMTYPE &a, ENUMTYPE b) noexcept { (INTTYPE &) a ^= ((INTTYPE) b); return a; } \
+  inline constexpr ENUMTYPE operator | (ENUMTYPE a, ENUMTYPE b) noexcept { return static_cast<ENUMTYPE>(static_cast<INTTYPE>(a) | static_cast<INTTYPE>(b)); } \
+  inline constexpr ENUMTYPE &operator |= (ENUMTYPE &a, ENUMTYPE b) noexcept { a = static_cast<ENUMTYPE>(static_cast<INTTYPE>(a) | static_cast<INTTYPE>(b)); return a; } \
+  inline constexpr ENUMTYPE operator & (ENUMTYPE a, ENUMTYPE b) noexcept { return static_cast<ENUMTYPE>(static_cast<INTTYPE>(a) & static_cast<INTTYPE>(b)); } \
+  inline constexpr ENUMTYPE &operator &= (ENUMTYPE &a, ENUMTYPE b) noexcept { a = static_cast<ENUMTYPE>(static_cast<INTTYPE>(a) & static_cast<INTTYPE>(b)); return a; } \
+  inline constexpr ENUMTYPE operator ~ (ENUMTYPE a) noexcept { return static_cast<ENUMTYPE>(~static_cast<INTTYPE>(a)); } \
+  inline constexpr ENUMTYPE operator ^ (ENUMTYPE a, ENUMTYPE b) noexcept { return static_cast<ENUMTYPE>(static_cast<INTTYPE>(a) ^ static_cast<INTTYPE>(b)); } \
+  inline constexpr ENUMTYPE &operator ^= (ENUMTYPE &a, ENUMTYPE b) noexcept { a = static_cast<ENUMTYPE>(static_cast<INTTYPE>(a) ^ static_cast<INTTYPE>(b)); return a; } \
   inline constexpr bool operator == (ENUMTYPE a, ENUMTYPE b) noexcept { return static_cast<INTTYPE>(a) == static_cast<INTTYPE>(b); } \
   inline constexpr bool operator == (INTTYPE a, ENUMTYPE b) noexcept { return static_cast<INTTYPE>(a) == static_cast<INTTYPE>(b); } \
   inline constexpr bool operator == (ENUMTYPE a, INTTYPE b) noexcept { return static_cast<INTTYPE>(a) == static_cast<INTTYPE>(b); } \
@@ -102,42 +105,42 @@ namespace Harlinn::Common
     }
 
     using Boolean = bool;
-    using Int8 = signed char;
-    using SByte = signed char;
-    using UInt8 = unsigned char;
-    using Byte = unsigned char;
-    using Int16 = short;
-    using UInt16 = unsigned short;
+    using Int8 = std::int8_t;
+    using SByte = std::int8_t;
+    using UInt8 = std::uint8_t;
+    using Byte = std::uint8_t;
+    using Int16 = std::int16_t;
+    using UInt16 = std::uint16_t;
     using ushort = unsigned short;
 
-    using Int32 = int;
+    using Int32 = std::int32_t;
     using Int = int;
-    using UInt32 = unsigned int;
+    using UInt32 = std::uint32_t;
     using UInt = unsigned int;
-    using ULong32 = unsigned long;
-    using Long32 = long;
+    using ULong32 = std::uint32_t;
+    using Long32 = std::int32_t;
     using uint = unsigned int;
-    using DWord32 = unsigned long;
-    using DWord = unsigned long;
+    using DWord32 = std::uint32_t;
+    using DWord = std::uint32_t;
 
-    using Int64 = long long;
-    using Long64 = long long;
+    using Int64 = std::int64_t;
+    using Long64 = std::int64_t;
     using LongLong = long long;
-    using UInt64 = unsigned long long;
-    using ULong64 = unsigned long long;
+    using UInt64 = std::uint64_t;
+    using ULong64 = std::uint64_t;
     using ULongLong = unsigned long long;
-    using DWord64 = unsigned long;
+    using DWord64 = std::uint64_t;
 
-    using ssize_t = std::make_signed_t<size_t>;
+    using ssize_t = std::make_signed_t<std::size_t>;
     using SSizeT = ssize_t;
-    using SizeT = size_t;
+    using SizeT = std::size_t;
 
 
     using Char = char;
     using WideChar = wchar_t;
-    using Char8 = char;
-    using Char16 = wchar_t;
-    using Char32 = UInt32;
+    using Char8 = char8_t;
+    using Char16 = char16_t;
+    using Char32 = char32_t;
 
     using Single = float;
     using Double = double;

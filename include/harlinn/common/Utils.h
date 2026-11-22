@@ -25,12 +25,40 @@
 #include <array>
 #include <bit>
 #include <cassert>
+#include <cctype>
 #include <chrono>
+#include <climits>
 #include <cmath>
+#include <cstdint>
+#include <cstring>
+#include <cstdlib>
+#include <cwchar>
 #include <cwctype>
 #include <limits>
-#include <climits>
 #include <string_view>
+#include <utility>
+
+#if defined(_MSC_VER)
+#include <intrin.h>
+#include <malloc.h>
+#endif
+#if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#define HARLINN_COMMON_UNDEFINE_NOMINMAX
+#endif
+#ifdef max
+#undef max
+#endif
+#ifdef min
+#undef min
+#endif
+#include <objbase.h>
+#ifdef HARLINN_COMMON_UNDEFINE_NOMINMAX
+#undef NOMINMAX
+#undef HARLINN_COMMON_UNDEFINE_NOMINMAX
+#endif
+#endif
 
 #include "Concepts.h"
 
@@ -277,120 +305,137 @@ namespace Harlinn::Common
 
 
 
-#pragma pack(push,1)
     /// <summary>
     /// Represents an 8-bit storage unit exposing the raw byte value.
     /// </summary>
-    /// <remarks>
-    /// This type is a simple wrapper around a single <c>Byte</c> and is used when explicit 8-bit
-    /// access is required (for example bitwise operations or byte-level views).
-    /// </remarks>
     struct Bits8
     {
-        /// <summary>
-        /// The underlying 8-bit value.
-        /// </summary>
-        Byte Value;
+        Byte Value{};
     };
 
     /// <summary>
-    /// Represents a 16-bit storage view that can be accessed as two bytes or as a 16-bit value.
+    /// Represents a 16-bit value with portable byte accessors.
     /// </summary>
-    /// <remarks>
-    /// The anonymous struct provides low/high byte access. Use <c>Low</c> and <c>High</c> for byte-wise
-    /// manipulation and <c>Value</c> to treat the two bytes as a single <c>UInt16</c> value.
-    /// The layout relies on the surrounding <c>#pragma pack(push,1)</c> to define packing.
-    /// </remarks>
-    union Bits16
+    struct Bits16
     {
-        struct
+        UInt16 Value{};
+
+        [[nodiscard]] constexpr Byte Low() const noexcept
         {
-            /// <summary>
-            /// The low-order byte (least significant byte) of the 16-bit storage.
-            /// </summary>
-            Byte Low;
-            /// <summary>
-            /// The high-order byte (most significant byte) of the 16-bit storage.
-            /// </summary>
-            Byte High;
-        };
-        /// <summary>
-        /// The 16-bit unsigned view of the storage.
-        /// </summary>
-        UInt16 Value;
+            return static_cast<Byte>(Value & 0xFFu);
+        }
+
+        [[nodiscard]] constexpr Byte High() const noexcept
+        {
+            return static_cast<Byte>(Value >> 8);
+        }
+
+        constexpr void SetLow(Byte value) noexcept
+        {
+            Value = static_cast<UInt16>((Value & 0xFF00u) | value);
+        }
+
+        constexpr void SetHigh(Byte value) noexcept
+        {
+            Value = static_cast<UInt16>((Value & 0x00FFu) | (static_cast<UInt16>(value) << 8));
+        }
     };
 
     /// <summary>
-    /// Represents a 32-bit storage view that can be accessed as two 16-bit halves, a 32-bit unsigned value,
-    /// a 32-bit signed integer, or a single-precision floating-point value.
+    /// Represents a 32-bit value with portable half-word and scalar accessors.
     /// </summary>
-    /// <remarks>
-    /// Use the <c>Low</c> and <c>High</c> members to access the lower and upper 16-bit halves respectively.
-    /// The union provides multiple interpretations of the same 32-bit bit-pattern without changing memory.
-    /// </remarks>
-    union Bits32
+    struct Bits32
     {
-        struct
+        UInt32 Value{};
+
+        [[nodiscard]] constexpr Bits16 Low() const noexcept
         {
-            /// <summary>
-            /// The lower 16-bit half of the 32-bit storage.
-            /// </summary>
-            Bits16 Low;
-            /// <summary>
-            /// The upper 16-bit half of the 32-bit storage.
-            /// </summary>
-            Bits16 High;
-        };
-        /// <summary>
-        /// The 32-bit unsigned integer view of the storage.
-        /// </summary>
-        UInt32 Value;
-        /// <summary>
-        /// The 32-bit signed integer view of the storage.
-        /// </summary>
-        Int32 Int32Value;
-        /// <summary>
-        /// The 32-bit single-precision floating-point view of the storage.
-        /// </summary>
-        Single SingleValue;
+            return {static_cast<UInt16>(Value)};
+        }
+
+        [[nodiscard]] constexpr Bits16 High() const noexcept
+        {
+            return {static_cast<UInt16>(Value >> 16)};
+        }
+
+        constexpr void SetLow(Bits16 value) noexcept
+        {
+            Value = (Value & 0xFFFF0000u) | value.Value;
+        }
+
+        constexpr void SetHigh(Bits16 value) noexcept
+        {
+            Value = (Value & 0x0000FFFFu) | (static_cast<UInt32>(value.Value) << 16);
+        }
+
+        [[nodiscard]] constexpr Int32 GetInt32Value() const noexcept
+        {
+            return std::bit_cast<Int32>(Value);
+        }
+
+        constexpr void SetInt32Value(Int32 value) noexcept
+        {
+            Value = std::bit_cast<UInt32>(value);
+        }
+
+        [[nodiscard]] constexpr Single GetSingleValue() const noexcept
+        {
+            return std::bit_cast<Single>(Value);
+        }
+
+        constexpr void SetSingleValue(Single value) noexcept
+        {
+            Value = std::bit_cast<UInt32>(value);
+        }
     };
 
     /// <summary>
-    /// Represents a 64-bit storage view that can be accessed as two 32-bit halves, a 64-bit unsigned value,
-    /// a 64-bit signed integer, or a double-precision floating-point value.
+    /// Represents a 64-bit value with portable half-word and scalar accessors.
     /// </summary>
-    /// <remarks>
-    /// Use <c>Low</c> and <c>High</c> to manipulate the lower and upper 32-bit halves. The union permits
-    /// reinterpretation of the underlying 64-bit bit-pattern as different scalar types without casting.
-    /// </remarks>
-    union Bits64
+    struct Bits64
     {
-        struct
-        {
-            /// <summary>
-            /// The lower 32-bit half of the 64-bit storage.
-            /// </summary>
-            Bits32 Low;
-            /// <summary>
-            /// The upper 32-bit half of the 64-bit storage.
-            /// </summary>
-            Bits32 High;
-        };
-        /// <summary>
-        /// The 64-bit unsigned integer view of the storage.
-        /// </summary>
-        UInt64 Value;
-        /// <summary>
-        /// The 64-bit signed integer view of the storage.
-        /// </summary>
-        Int64 Int64Value;
-        /// <summary>
-        /// The 64-bit double-precision floating-point view of the storage.
-        /// </summary>
-        Double DoubleValue;
-    };
+        UInt64 Value{};
 
-#pragma pack(pop)
+        [[nodiscard]] constexpr Bits32 Low() const noexcept
+        {
+            return {static_cast<UInt32>(Value)};
+        }
+
+        [[nodiscard]] constexpr Bits32 High() const noexcept
+        {
+            return {static_cast<UInt32>(Value >> 32)};
+        }
+
+        constexpr void SetLow(Bits32 value) noexcept
+        {
+            Value = (Value & 0xFFFFFFFF00000000ULL) | value.Value;
+        }
+
+        constexpr void SetHigh(Bits32 value) noexcept
+        {
+            Value = (Value & 0x00000000FFFFFFFFULL) | (static_cast<UInt64>(value.Value) << 32);
+        }
+
+        [[nodiscard]] constexpr Int64 GetInt64Value() const noexcept
+        {
+            return std::bit_cast<Int64>(Value);
+        }
+
+        constexpr void SetInt64Value(Int64 value) noexcept
+        {
+            Value = std::bit_cast<UInt64>(value);
+        }
+
+        [[nodiscard]] constexpr Double GetDoubleValue() const noexcept
+        {
+            return std::bit_cast<Double>(Value);
+        }
+
+        constexpr void SetDoubleValue(Double value) noexcept
+        {
+            Value = std::bit_cast<UInt64>(value);
+        }
+    };
 
 
     namespace Internal
@@ -813,21 +858,29 @@ namespace Harlinn::Common
         }
         else
         {
+            if (valueU == static_cast<UIntType>(0))
+            {
+                return false;
+            }
 #if defined(_MSC_VER)
             // Runtime: dispatch to MSVC intrinsics for performance.
+            unsigned long bitIndex{};
+            unsigned char found{};
             if constexpr ( sizeof( UIntType ) > 4 )
             {
-                // Use 64-bit intrinsic. Cast the value to UInt64 to match intrinsic signature.
-                auto v = std::bit_cast<UInt64>( bits );
-                return _BitScanForward64( index, v ) != 0;
-
+                auto v = std::bit_cast<UInt64>(bits);
+                found = _BitScanForward64(&bitIndex, v);
             }
             else
             {
-                // Use 32-bit intrinsic. Ensure the value is passed as unsigned long (DWORD).
-                auto v = static_cast<unsigned long>( valueU );
-                return _BitScanForward( index, v ) != 0;
+                auto v = static_cast<unsigned long>(valueU);
+                found = _BitScanForward(&bitIndex, v);
             }
+            if (found != 0 && index != nullptr)
+            {
+                *index = static_cast<UInt32>(bitIndex);
+            }
+            return found != 0;
 #else
             if ( valueU == static_cast<UIntType>( 0 ) )
             {
@@ -1087,10 +1140,10 @@ namespace Harlinn::Common
         {
             return 0ULL;
         }
-        const uint64_t start64 = static_cast<uint64_t>( start );
-        const uint64_t len64 = static_cast<uint64_t>( len );
-        const uint64_t maxAvailable = 64u - start64;
-        const uint64_t effectiveLen = ( len64 > maxAvailable ) ? maxAvailable : len64;
+        const UInt64 start64 = static_cast<UInt64>(start);
+        const UInt64 len64 = static_cast<UInt64>(len);
+        const UInt64 maxAvailable = 64u - start64;
+        const UInt64 effectiveLen = (len64 > maxAvailable) ? maxAvailable : len64;
 
         if ( std::is_constant_evaluated( ) )
         {
@@ -1129,10 +1182,10 @@ namespace Harlinn::Common
             return 0u;
         }
 
-        const uint64_t start64 = static_cast<uint64_t>( start );
-        const uint64_t len64 = static_cast<uint64_t>( len );
-        const uint64_t maxAvailable = 32u - start64;
-        const uint64_t effectiveLen64 = ( len64 > maxAvailable ) ? maxAvailable : len64;
+        const UInt64 start64 = static_cast<UInt64>(start);
+        const UInt64 len64 = static_cast<UInt64>(len);
+        const UInt64 maxAvailable = 32u - start64;
+        const UInt64 effectiveLen64 = (len64 > maxAvailable) ? maxAvailable : len64;
         const unsigned effectiveLen = static_cast<unsigned>( effectiveLen64 );
 
         if ( std::is_constant_evaluated( ) )
@@ -1163,35 +1216,33 @@ namespace Harlinn::Common
     /// The address to calculate the alignment for. 
     /// </param>
     /// <returns>
-    /// The aligned address.
+    /// The aligned address, or <c>nullptr</c> if the aligned address cannot be represented.
     /// </returns>
     template<size_t N, typename T>
     inline constexpr T* AlignTo( T* address ) noexcept
     {
         static_assert( N > 0, "AlignTo<N>: alignment N must be > 0" );
+        static_assert( N <= std::numeric_limits<std::uintptr_t>::max(), "Alignment must fit in uintptr_t" );
 
         constexpr bool IsPow2 = ( N & ( N - 1 ) ) == 0;
-
-        const size_t addr = reinterpret_cast<size_t>( address );
+        const auto addr = reinterpret_cast<std::uintptr_t>(address);
+        std::uintptr_t padding{};
 
         if constexpr ( IsPow2 )
         {
-            // Fast path for power-of-two alignments: (addr + (N-1)) & ~(N-1)
-            constexpr size_t mask = static_cast<size_t>( N - 1 );
-            const size_t aligned = ( addr + mask ) & ~mask;
-            return reinterpret_cast<T*>( aligned );
+            padding = (static_cast<std::uintptr_t>(N) - (addr & static_cast<std::uintptr_t>(N - 1))) & static_cast<std::uintptr_t>(N - 1);
         }
         else
         {
-            // Generic path for arbitrary N: compute remainder and add the minimal delta.
-            const size_t rem = addr % static_cast<size_t>( N );
-            if ( rem == 0 )
-            {
-                return address;
-            }
-            const size_t aligned = addr + ( static_cast<size_t>( N ) - rem );
-            return reinterpret_cast<T*>( aligned );
+            const auto rem = addr % static_cast<std::uintptr_t>(N);
+            padding = rem == 0 ? 0 : static_cast<std::uintptr_t>(N) - rem;
         }
+
+        if (padding > std::numeric_limits<std::uintptr_t>::max() - addr)
+        {
+            return nullptr;
+        }
+        return reinterpret_cast<T*>(addr + padding);
     }
 
 
@@ -1207,28 +1258,25 @@ namespace Harlinn::Common
     inline constexpr size_t AlignedPaddingFor( const T* address ) noexcept
     {
         static_assert( N > 0, "AlignedPaddingFor<N>: alignment N must be > 0" );
+        static_assert( N <= std::numeric_limits<std::uintptr_t>::max(), "Alignment must fit in uintptr_t" );
 
         constexpr bool IsPow2 = ( N & ( N - 1 ) ) == 0;
-
-        const size_t addr = reinterpret_cast<size_t>( address );
+        const auto addr = reinterpret_cast<std::uintptr_t>(address);
 
         if constexpr ( IsPow2 )
         {
-            // Use bit operations for power-of-two alignments.
-            // Avoids potential unsigned overflow from (addr + mask).
-            constexpr size_t mask = static_cast<size_t>( N - 1 );
-            const size_t rem = addr & mask;
+            constexpr auto mask = static_cast<std::uintptr_t>(N - 1);
+            const auto rem = addr & mask;
             return rem ? ( ( mask + 1 ) - rem ) : 0u;
         }
         else
         {
-            // Generic alignment: compute remainder via modulo and return delta.
-            const size_t rem = addr % static_cast<size_t>( N );
-            return rem == 0 ? 0u : ( static_cast<size_t>( N ) - rem );
+            const auto rem = addr % static_cast<std::uintptr_t>(N);
+            return rem == 0 ? 0u : static_cast<size_t>(static_cast<std::uintptr_t>(N) - rem);
         }
     }
 
-    
+
 
 
     template<typename T1, typename T2>
@@ -1424,14 +1472,12 @@ namespace Harlinn::Common
     /// <list type="bullet">
     ///   <item>
     ///     <description>
-    ///     The comparison is performed using byte-wise pointer arithmetic via
-    ///     <c>reinterpret_cast&lt;const char*&gt;</c> to avoid type aliasing issues.
+    ///     Non-null pointers are converted to <c>std::uintptr_t</c> so ranges from
+    ///     distinct objects can be compared without out-of-bounds pointer arithmetic.
     ///     </description>
     ///   </item>
     ///   <item>
-    ///     <description>
-    ///     Zero-length regions never overlap and will return <c>false</c>.
-    ///     </description>
+    ///     <description>Zero-length ranges or null pointers return <c>false</c>.</description>
     ///   </item>
     /// </list>
     /// </remarks>
@@ -1447,14 +1493,18 @@ namespace Harlinn::Common
     /// <seealso cref="MemMove(char*, const char*, size_t)"/>
     inline bool Overlaps( const void* first, size_t firstSize, const void* second, size_t secondSize ) noexcept
     {
-        if( first < second )
+        if ( firstSize == 0 || secondSize == 0 || first == nullptr || second == nullptr )
         {
-            return ( reinterpret_cast< const char* >( first ) + firstSize ) > reinterpret_cast< const char* >( second );
+            return false;
         }
-        else
+
+        const auto firstAddress = reinterpret_cast<std::uintptr_t>(first);
+        const auto secondAddress = reinterpret_cast<std::uintptr_t>(second);
+        if (firstAddress <= secondAddress)
         {
-            return ( reinterpret_cast<const char*>( second ) + secondSize ) > reinterpret_cast<const char*>( first );
+            return static_cast<std::uintmax_t>(secondAddress - firstAddress) < static_cast<std::uintmax_t>(firstSize);
         }
+        return static_cast<std::uintmax_t>(firstAddress - secondAddress) < static_cast<std::uintmax_t>(secondSize);
 	}
 
     /// <summary>
@@ -1993,7 +2043,7 @@ namespace Harlinn::Common
 		return 0;
     }
 
-#if defined(__GNUC__) || defined(__CLANG__)
+#if !defined(_MSC_VER)
     /// <summary>
     /// Compares two byte sequences in a case-insensitive manner.
     /// </summary>
@@ -2147,10 +2197,16 @@ namespace Harlinn::Common
         for ( size_t i = 0; i < length; ++i )
         {
             // Use std::towupper which takes/returns wint_t; cast to avoid narrowing.
-            wchar_t a = static_cast<wchar_t>( std::towupper( static_cast<wint_t>( first[ i ] ) ) );
-            wchar_t b = static_cast<wchar_t>( std::towupper( static_cast<wint_t>( second[ i ] ) ) );
-            if ( a < b ) return -1;
-            if ( a > b ) return 1;
+            wchar_t a = static_cast<wchar_t>(std::towupper(static_cast<std::wint_t>(first[i])));
+            wchar_t b = static_cast<wchar_t>(std::towupper(static_cast<std::wint_t>(second[i])));
+            if ( a < b ) 
+            {
+                return -1;
+            }
+            if ( a > b ) 
+            {
+                return 1;
+            }
         }
         return 0;
     }
@@ -2419,7 +2475,7 @@ namespace Harlinn::Common
         return Common::Internal::LengthOf( str );
     }
 
-    inline constexpr int Compare( std::nullptr_t s1, std::nullptr_t s2 ) noexcept
+    inline constexpr int Compare( std::nullptr_t, std::nullptr_t ) noexcept
     {
         return 0;
     }
@@ -2778,7 +2834,7 @@ namespace Harlinn::Common
         /// <param name="p">Pointer to be freed. May be <c>nullptr</c>.</param>
         void operator()( T* p ) const
         {
-            free( p );
+            std::free(p);
         };
     };
 
@@ -2802,6 +2858,7 @@ namespace Harlinn::Common
     /// // memory will be released via _freea when 'p' is destroyed
     /// </code>
     /// </example>
+#if defined(_MSC_VER)
     template<typename T>
     class FreeADeleter
     {
@@ -2814,7 +2871,9 @@ namespace Harlinn::Common
             _freea( p );
         };
     };
+#endif
 
+#if defined(_WIN32)
     /// <summary>
     /// Stateless deleter that releases memory allocated via COM allocator functions by calling <c>CoTaskMemFree</c>.
     /// </summary>
@@ -2852,6 +2911,7 @@ namespace Harlinn::Common
             CoTaskMemFree( p );
         };
     };
+#endif
 
     /// <summary>
     /// Stateless deleter that calls the <c>Release</c> method on a reference-counted object.

@@ -7,14 +7,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        compiler: [gcc, clang, msvc]
-        exclude:
-          - os: ubuntu-latest
-            compiler: msvc
-          - os: macos-latest
-            compiler: msvc
-          - os: windows-latest
-            compiler: gcc
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +15,7 @@ jobs:
         uses: seanmiddleditch/gha-setup-ninja@master
 
       - name: Setup MSVC
-        if: matrix.compiler == 'msvc'
+        if: matrix.os == 'windows-latest'
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Configure

@@ -6,6 +6,8 @@ project(HarlinnCommon
     DESCRIPTION "Header-only common utilities for the Harlinn ecosystem"
 )
 
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 option(HARLINN_COMMON_CXX26 "Require C++26 instead of C++23" OFF)
 
 if(HARLINN_COMMON_CXX26)

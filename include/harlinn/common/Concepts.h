@@ -21,8 +21,10 @@
 #define _USE_MATH_DEFINES 1
 #endif
 
+#include <concepts>
 #include <iterator>
 #include <ranges>
+#include <type_traits>
 #include "BasicTypes.h"
 
 namespace Harlinn::Common

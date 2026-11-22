@@ -6,8 +6,16 @@ few standard C++ header files:
 - `<array>`
 - `<bit>`
 - `<cassert>`
+- `<cctype>`
 - `<chrono>`
+- `<climits>`
 - `<cmath>`
+- `<concepts>`
+- `<cstddef>`
+- `<cstdint>`
+- `<cstdlib>`
+- `<cstring>`
+- `<cwchar>`
 - `<cwctype>`
 - `<iterator>`
 - `<limits>`
@@ -29,9 +37,4 @@ cmake --build --preset default
 ctest --preset default
 ```
 
-For local development with sibling repos:
-
-```
-cmake --preset local-dev
-```
-
+The `default`, `release`, and `cxx26` configure presets are available on all supported platforms.
