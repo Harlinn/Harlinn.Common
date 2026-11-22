@@ -49,6 +49,12 @@ TEST_CASE("Harlinn.Common::BitsXX bit views handles representation aliasing", "[
     REQUIRE(bits64.High().Value == 0x9ABCDEF0);
 }
 
+TEST_CASE("Harlinn.Common ReverseBits supports long types", "[common]")
+{
+    REQUIRE(Harlinn::Common::ReverseBits(1L) == std::numeric_limits<long>::min());
+    REQUIRE(Harlinn::Common::ReverseBits(1UL) == (1UL << (std::numeric_limits<unsigned long>::digits - 1)));
+}
+
 enum class TestFlags : std::uint32_t
 {
     First = 1,

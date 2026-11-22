@@ -780,18 +780,22 @@ namespace Harlinn::Common
     /// <summary>
     /// Reverses the order of the bits of a long.
     /// </summary>
-    inline constexpr long ReverseBits( long val ) noexcept
+    template<typename T>
+        requires std::is_same_v<T, long> && (!std::is_same_v<T, Int64>)
+    inline constexpr T ReverseBits( T val ) noexcept
     {
-        using UIntType = MakeUnsigned<long>;
-        return std::bit_cast< long >( ReverseBits( std::bit_cast< UIntType >( val ) ) );
+        using UIntType = MakeUnsigned<T>;
+        return std::bit_cast< T >( ReverseBits( std::bit_cast< UIntType >( val ) ) );
     }
     /// <summary>
     /// Reverses the order of the bits of an unsigned long.
     /// </summary>
-    inline constexpr unsigned long ReverseBits( unsigned long val ) noexcept
+    template<typename T>
+        requires std::is_same_v<T, unsigned long> && (!std::is_same_v<T, UInt64>)
+    inline constexpr T ReverseBits( T val ) noexcept
     {
-        using UIntType = MakeUnsigned<unsigned long>;
-        return std::bit_cast< unsigned long >( ReverseBits( std::bit_cast< UIntType >( val ) ) );
+        using UIntType = MakeUnsigned<T>;
+        return std::bit_cast< T >( ReverseBits( std::bit_cast< UIntType >( val ) ) );
     }
 
 
