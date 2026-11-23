@@ -179,8 +179,8 @@ namespace Harlinn::Common
     /// <typeparam name="T">
     /// Type to be checked as a constant range.
     /// </typeparam>
-    
-#if defined(__APPLE__)
+
+#if !defined(__cpp_lib_ranges_as_const) || __cpp_lib_ranges_as_const < 202207L
     namespace Internal
     {
         template<std::indirectly_readable T>
